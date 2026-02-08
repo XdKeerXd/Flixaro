@@ -1724,6 +1724,27 @@
         async function loadUserData() { if (!user) { favorites = []; history = []; renderFavorites(); renderHistory(); return } const f = await db.ref(`users/${user.uid}/favorites`).once('value'); favorites = Object.values(f.val() || {}); renderFavorites() }
         async function init() { if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js'); const [tr, mv, tp, tv, an] = await Promise.all([fetchAPI('/trending/all/week'), fetchAPI('/movie/popular'), fetchAPI('/movie/top_rated'), fetchAPI('/tv/popular'), fetchAPI('/discover/tv', { with_genres: 16, with_origin_country: 'JP' })]); heroItems = (tr?.results || []).slice(0, 5); renderHero(); renderRow($('trendingRow'), tr?.results || []); renderRow($('moviesRow'), mv?.results || []); renderRow($('animeRow'), (an?.results || []).map(x => ({ ...x, media_type: 'tv' }))) }
         document.addEventListener('DOMContentLoaded', init);
+        // Close button handlers
+        $('closePlayer').onclick = closePlayer;
+        $('closeInfo').onclick = closeInfo;
+        // User menu toggle
+        $('userBtn').onclick = () => $('userMenu').classList.toggle('active');
+        document.addEventListener('click', e => { if (!e.target.closest('#userBtn') && !e.target.closest('#userMenu')) $('userMenu').classList.remove('active'); });
+        // Logout
+        $('logoutBtn').onclick = () => { auth.signOut(); toast('Logged out'); };
+        // Server buttons
+        $$('.server-btn[data-server]').forEach(btn => btn.onclick = () => { currentServer = btn.dataset.server; $$('.server-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); updatePlayer(); });
+        // Search input
+        $('searchInput').oninput = debounce(e => search(e.target.value), 400);
+        // Nav links
+        $$('.nav a').forEach(a => a.onclick = e => { e.preventDefault(); $$('.nav a').forEach(x => x.classList.remove('active')); a.classList.add('active'); const page = a.dataset.page; if (page === 'install') { $('hero').style.display = 'none'; $('mainContent').style.display = 'none'; $('installPage').style.display = 'block'; } else { $('hero').style.display = 'block'; $('mainContent').style.display = 'block'; $('installPage').style.display = 'none'; } });
+        // Close modals on backdrop click
+        $('playerModal').onclick = e => { if (e.target === $('playerModal')) closePlayer(); };
+        $('infoModal').onclick = e => { if (e.target === $('infoModal')) closeInfo(); };
+        // Header scroll
+        window.onscroll = () => { $('header').classList.toggle('scrolled', window.scrollY > 50); };
+        // Hero rotation
+        setInterval(() => { heroIndex = (heroIndex + 1) % Math.min(heroItems.length, 5); renderHero(); }, 8000);
     </script>
 </body>
 
